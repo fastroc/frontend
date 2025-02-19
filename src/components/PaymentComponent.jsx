@@ -32,6 +32,7 @@ const PaymentComponent = () => {
             clearInterval(intervalId);
           }
         } catch (err) {
+          console.error('Payment status check failed:', err);
           setPaymentStatus('failed');
           clearInterval(intervalId);
         }
