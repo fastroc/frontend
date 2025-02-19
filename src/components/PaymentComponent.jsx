@@ -11,12 +11,14 @@ const PaymentComponent = () => {
   // New payment status state
   const [paymentStatus, setPaymentStatus] = useState('idle'); // 'idle' | 'pending' | 'paid' | 'failed'
   const [paymentDetails, setPaymentDetails] = useState(null);
+  const [paymentId, setPaymentId] = useState(null);
 
   // Polling effect
   useEffect(() => {
     let intervalId;
     
-    if (invoice?.invoice_id && paymentStatus !== 'paid') {
+    if (invoice?.invoice_id && paymentId && paymentStatus !== 'paid') {
+      setPaymentId(invoice.payment_id); // Assuming payment_id is part of the invoice object
       intervalId = setInterval(async () => {
         try {
           const response = await axios.get(
@@ -40,14 +42,14 @@ const PaymentComponent = () => {
     }
     
     return () => clearInterval(intervalId);
-  }, [invoice, paymentStatus]);
+  }, [invoice, paymentId, paymentStatus]);
 
   // Modified create invoice function
   const createInvoice = async () => {
     setLoading(true);
     setError(null);
     setPaymentStatus('idle');
-
+  
     try {
       const response = await axios.post(
         'http://174.129.173.184:5000/api/create-invoice',
@@ -55,8 +57,9 @@ const PaymentComponent = () => {
           callback_url: "http://174.129.173.184:5000/api/payment-callback"
         }
       );
-
+  
       setInvoice(response.data);
+      setPaymentId(response.data.payment_id); // Assuming payment_id is in the response
       setPaymentStatus('pending');
     } catch (err) {
       setError(err.response?.data?.error || 'Payment initialization failed');
