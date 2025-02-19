@@ -20,7 +20,7 @@ const PaymentComponent = () => {
       intervalId = setInterval(async () => {
         try {
           const response = await axios.get(
-            `http://174.129.173.184:5000/api/payment-status/${invoice.invoice_id}`
+            `http://174.129.173.184:5000/api/payment-status/${paymentId}`
           );
           
           if (response.data.status === 'PAID') {
