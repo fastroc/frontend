@@ -5,29 +5,32 @@ const PaymentComponent = () => {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState('idle'); // 'idle' | 'pending' | 'paid' | 'failed'
+  const [paymentStatus, setPaymentStatus] = useState('idle');
   const [paymentDetails, setPaymentDetails] = useState(null);
-  const [paymentId, setPaymentId] = useState(null);
+  const [invoiceId, setInvoiceId] = useState(null);
 
   useEffect(() => {
     let intervalId;
 
-    if (paymentId && paymentStatus !== 'paid' && paymentStatus !== 'failed') {
+    if (invoiceId && paymentStatus !== 'paid' && paymentStatus !== 'failed') {
       intervalId = setInterval(async () => {
         try {
+          console.log(`Polling payment status for invoiceId: ${invoiceId}`);
           const response = await axios.get(
-            `http://174.129.173.184:5000/api/payment-status/${paymentId}`
+            `http://174.129.173.184:5000/api/payment-status/${invoiceId}`
           );
 
           const status = response.data.status;
           setPaymentStatus(status.toLowerCase());
           setPaymentDetails(response.data.details);
 
+          console.log(`Payment status updated: ${status}`);
+
           if (status === 'PAID' || status === 'FAILED') {
             clearInterval(intervalId);
           }
         } catch (err) {
-          console.error('Payment status check failed:', err);
+          console.error('Payment status check failed:', err.response?.data || err);
           setPaymentStatus('failed');
           clearInterval(intervalId);
         }
@@ -35,7 +38,7 @@ const PaymentComponent = () => {
     }
 
     return () => clearInterval(intervalId);
-  }, [paymentId, paymentStatus]);
+  }, [invoiceId, paymentStatus]);
 
   const createInvoice = async () => {
     setLoading(true);
@@ -51,7 +54,8 @@ const PaymentComponent = () => {
       );
 
       setInvoice(response.data);
-      setPaymentId(response.data.invoice_id); // Use invoice_id initially, will be updated by callback
+      setInvoiceId(response.data.invoice_id);
+      console.log(`Invoice created with ID: ${response.data.invoice_id}`);
       setPaymentStatus('pending');
     } catch (err) {
       setError(err.response?.data?.error || 'Payment initialization failed');
